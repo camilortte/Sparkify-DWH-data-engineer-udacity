@@ -65,7 +65,7 @@ LIMIT 1
 ```
 
 
-### I want to know the most relevant 10 artists
+### I want to know the most relevant artists
 ```
 SELECT artists.name,  COUNT(songplays.artist_id) as counted_songs
 from songplays

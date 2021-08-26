@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS songs_staging (
 
 songplay_table_create = ("""
 CREATE TABLE IF NOT EXISTS songplays (
-  songplay_id INTEGER identity(0, 1), 
+  songplay_id INTEGER identity(0, 1) PRIMARY KEY, 
   start_time TIMESTAMP NOT NULL, 
   user_id INTEGER NOT NULL, 
   level VARCHAR, 
@@ -67,14 +67,30 @@ CREATE TABLE IF NOT EXISTS songplays (
   artist_id VARCHAR, 
   session_id INTEGER, 
   location VARCHAR, 
-  usert_agent VARCHAR  
+  usert_agent VARCHAR,
+
+  CONSTRAINT fk_start_time
+   FOREIGN KEY(start_time) 
+      REFERENCES time(start_time),
+  
+  CONSTRAINT fk_user_id
+   FOREIGN KEY(user_id) 
+      REFERENCES users(user_id),
+  
+  CONSTRAINT fk_artist_id
+   FOREIGN KEY(artist_id) 
+      REFERENCES artists(artist_id),
+  
+  CONSTRAINT fk_song_id
+   FOREIGN KEY(song_id) 
+      REFERENCES songs(song_id)
 );
 """)
 
 user_table_create = ("""
 CREATE TABLE users 
 (
-  user_id      INTEGER NOT NULL,
+  user_id      INTEGER PRIMARY KEY,
   first_name   VARCHAR,
   last_name    VARCHAR,
   gender       CHAR(1),
@@ -85,7 +101,7 @@ CREATE TABLE users
 song_table_create = ("""
 CREATE TABLE songs 
 (
-  song_id     VARCHAR NOT NULL,
+  song_id     VARCHAR PRIMARY KEY,
   title       VARCHAR NOT NULL,
   artist_id   VARCHAR NOT NULL,
   year        INTEGER,
@@ -95,7 +111,7 @@ CREATE TABLE songs
 
 artist_table_create = ("""
 CREATE TABLE IF NOT EXISTS artists (
-  artist_id VARCHAR NOT NULL, 
+  artist_id VARCHAR PRIMARY KEY, 
   name VARCHAR NOT NULL, 
   location VARCHAR, 
   latitude NUMERIC, 
@@ -105,7 +121,7 @@ CREATE TABLE IF NOT EXISTS artists (
 
 time_table_create = ("""
 CREATE TABLE IF NOT EXISTS time (
-  start_time TIMESTAMP NOT NULL, 
+  start_time TIMESTAMP PRIMARY KEY, 
   hour INTEGER NOT NULL, 
   day INTEGER NOT NULL, 
   week INTEGER NOT NULL, 
@@ -121,14 +137,14 @@ staging_events_copy = f"""
 COPY events_staging FROM 's3://udacity-dend/log_data' 
   credentials 'aws_iam_role={ARN_ROLE}'
   REGION 'us-west-2' 
-  json 'auto ignorecase';
+  FORMAT AS JSON 's3://udacity-dend/log_json_path.json';
 """
 
 staging_songs_copy = f"""
 COPY songs_staging FROM 's3://udacity-dend/song_data' 
   credentials 'aws_iam_role={ARN_ROLE}'
   REGION 'us-west-2'
-  json 'auto ignorecase';
+  json 'auto';
 """
 
 # FINAL TABLES
@@ -165,7 +181,7 @@ songplay_table_insert = ("""
 user_table_insert = ("""
 INSERT INTO users (user_id, first_name, last_name, gender, level)
   SELECT 
-    userId as user_id,
+    DISTINCT userId as user_id,
     firstName as first_name,
     lastName as last_name,
     gender as gender,
@@ -177,7 +193,7 @@ INSERT INTO users (user_id, first_name, last_name, gender, level)
 song_table_insert = ("""
 INSERT INTO songs (song_id, title, artist_id, year, duration)
   SELECT 
-    song_id, 
+    DISTINCT song_id, 
     title, 
     artist_id,
     year,
@@ -188,7 +204,7 @@ INSERT INTO songs (song_id, title, artist_id, year, duration)
 artist_table_insert = ("""
 INSERT INTO artists (artist_id, name, location, latitude, longitude)
   SELECT 
-    artist_id,
+    DISTINCT artist_id,
     artist_name as name,
     artist_location as location,
     artist_latitude as latitude,
@@ -215,11 +231,12 @@ INSERT INTO time (
        EXTRACT(year FROM start_time)                              AS year,
        EXTRACT(weekday FROM start_time)                              AS weekday
   FROM events_staging
+  WHERE ts is NOT NULL
 """)
 
 # QUERY LISTS
 
-create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
+create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
