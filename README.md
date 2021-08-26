@@ -1,33 +1,43 @@
-# Sparkify - Postgres Data Modeling (1 Udacity project for Date Enginner nanodegree program)
+# Sparkify - Redshift DataWareHouse (3 Udacity project for Date Enginner nanodegree program)
 
 ## Introduction
 
-A startup called Sparkify wants to analyze the data they've been collecting on songs and user activity on their new music streaming app. The analytics team is particularly interested in understanding what songs users are listening to. Currently, they don't have an easy way to query their data, which resides in a directory of JSON logs on user activity on the app, as well as a directory with JSON metadata on the songs in their app.
-
-They'd like a data engineer to create a Postgres database with tables designed to optimize queries on song play analysis, and bring you on the project. Your role is to create a database schema and ETL pipeline for this analysis. You'll be able to test your database and ETL pipeline by running queries given to you by the analytics team from Sparkify and compare your results with their expected results.
-
+Using the song and event datasets, I created a star schema optimized for queries on song play analysis. 
 
 ## Database purpose
 
-This data modeling has as goal to organize and structure the songs that are lisetineng, it allows to easly query this information using de SQL query languaje
+This data modeling has as goal to organize and structure the songs that are lisetineng.
 
 ## Database schema design
 
-This database is design to save the Songs, users, artis data, and with this relationship save the songs that are listiening by the users.
+### Fact Table
+songplays - records in event data associated with song plays i.e. records with page NextSong
+* songplay_id, start_time, user_id, level, song_id, artist_id, session_id, location, user_agent
 
-![Database schema](sparkifydb_erd.png)
 
-Note: This database use Foreign keys with constraints. 
+### Dimension Tables
+users - users in the app
+* user_id, first_name, last_name, gender, level
+songs - songs in music database
+* song_id, title, artist_id, year, duration
+artists - artists in music database
+* artist_id, name, location, lattitude, longitude
+time - timestamps of records in songplays broken down into specific units
+* start_time, hour, day, week, month, year, weekday
+
+
+![Database schema](sparkifydb_dwh_erd.png.png)
 
 ## How to run this project 
 
 ### Create DB
+
+Be sure you Redshift database is created. 
 ```
-$ sudo -u postgres psql -c "create role student  with login password 'student';" -W -h 127.0.0.1
-$ sudo -u postgres psql -c "alter user student with superuser;" -W -h 127.0.0.1
-$ sudo -u postgres createdb sparkifydb -O student -W -h 127.0.0.1
-$ sudo -u postgres createdb studentdb -O student -W -h 127.0.0.1
+$ cp dwh.cfg.example dwh.cfg
 ```
+
+Replace the DB parameters in dwh.cfg file
 
 ### Run scripts
 ```
@@ -35,12 +45,6 @@ pipenv shell
 pip install -r requirements.txt
 python create_tables.py 
 python etl.py
-```
-
-## How to develop
-```
-pipenv shell
-jupyter-lab
 ```
 
 ## Generate ER Diagram

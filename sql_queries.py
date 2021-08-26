@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS events_staging (
   sessionId INTEGER,
   song VARCHAR,
   status INTEGER,
-  ts BIGINT,
+  ts VARCHAR,
   userAgent VARCHAR,
   userId INTEGER
 );
@@ -134,8 +134,7 @@ COPY songs_staging FROM 's3://udacity-dend/song_data'
 # FINAL TABLES
 
 songplay_table_insert = ("""
-INSERT INTO songplays (
-  songplay_id, 
+  INSERT INTO songplays (  
     start_time, 
     user_id, 
     level, 
@@ -146,22 +145,21 @@ INSERT INTO songplays (
     usert_agent
   )
   SELECT 
-    song_id as songplay_id,
-    start_time as name, --- PENDING
-    userId as user_id,
-    level,
-    song_id,
-    artist_id,
-    sessionId as session_id,
-    location,
-    usert_agent
+    (timestamp 'epoch' + events_staging.ts/1000 * interval '1 second') as start_time,
+    events_staging.userId as user_id,
+    events_staging.level,
+    songs_staging.song_id,
+    songs_staging.artist_id,
+    events_staging.sessionId as session_id,
+    songs_staging.artist_location,
+    events_staging.userAgent as user_agent
   FROM songs_staging
   INNER JOIN events_staging ON 
     events_staging.song = songs_staging.title AND  
     events_staging.artist = songs_staging.artist_name
   WHERE 
     events_staging.song iS NOT NULL AND
-    events_staging.artist iS NOT NULL AND
+    events_staging.artist iS NOT NULL
 """)
 
 user_table_insert = ("""
@@ -200,7 +198,6 @@ INSERT INTO artists (artist_id, name, location, latitude, longitude)
 
 time_table_insert = ("""
 INSERT INTO time (
-  date_key,
   start_time,
   hour,
   day,
@@ -210,14 +207,13 @@ INSERT INTO time (
   weekday
 )
   SELECT 
-    DISTINCT(TO_CHAR(ts :: DATE, 'yyyyMMDD')::integer) AS date_key,
-       date(ts)                                           AS start_time,
-       EXTRACT(year FROM ts)                              AS year,
-       EXTRACT(quarter FROM ts)                           AS quarter,
-       EXTRACT(month FROM ts)                             AS month,
-       EXTRACT(day FROM ts)                               AS day,
-       EXTRACT(week FROM ts)                              AS week,
-       CASE WHEN EXTRACT(ISODOW FROM ts) IN (6, 7) THEN true ELSE false END AS is_weekend
+       DISTINCT(timestamp 'epoch' + ts/1000 * interval '1 second') as start_time,
+       EXTRACT(hour FROM start_time)                              AS hour,
+       EXTRACT(day FROM start_time)                              AS day,
+       EXTRACT(week FROM start_time)                              AS week,
+       EXTRACT(month FROM start_time)                              AS month,
+       EXTRACT(year FROM start_time)                              AS year,
+       EXTRACT(weekday FROM start_time)                              AS weekday
   FROM events_staging
 """)
 
