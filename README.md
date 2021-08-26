@@ -51,3 +51,34 @@ python etl.py
 ```
 python generate_schema.py
 ```
+
+## Queries
+
+### I want to know the most relevant song
+```
+SELECT songs.title,  COUNT(songplays.song_id) as counted
+from songplays
+INNER JOIN songs ON songs.song_id = songplays.song_id
+GROUP BY songs.title
+ORDER BY counted DESC
+LIMIT 1
+```
+
+
+### I want to know the most relevant 10 artists
+```
+SELECT artists.name,  COUNT(songplays.artist_id) as counted_songs
+from songplays
+INNER JOIN artists ON artists.artist_id = songplays.artist_id
+GROUP BY artists.name
+ORDER BY counted_songs DESC
+```
+
+### I want to know where people play songs (User-agent)
+```
+SELECT songplays.usert_agent,  COUNT(songplays.usert_agent) as counted
+from songplays
+GROUP BY songplays.usert_agent
+ORDER BY counted DESC
+LIMIT 10
+```
