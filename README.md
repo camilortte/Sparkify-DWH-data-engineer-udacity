@@ -26,7 +26,7 @@ time - timestamps of records in songplays broken down into specific units
 * start_time, hour, day, week, month, year, weekday
 
 
-![Database schema](sparkifydb_dwh_erd.png)
+![Database schema](sparkifydb_erd.png)
 
 ## How to run this project 
 
